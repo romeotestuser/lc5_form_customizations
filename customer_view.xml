@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+
+		<record model="ir.ui.view" id="lc5_partner_nature_of_business_form_view">
+			<field name="name">lc5.partner.nature.business.form</field>
+			<field name="model">lc5.partner.nature.business</field>
+			<field name="type">form</field>
+			<field name="arch" type="xml">
+				<form string="Nature of Business">
+					<field name="name" select="1"/>
+				</form>
+			</field>
+		</record>
+		
+		<record model="ir.ui.view" id="lc5_partner_organization_form_view">
+			<field name="name">lc5.partner.organization.form</field>
+			<field name="model">lc5.partner.organization</field>
+			<field name="type">form</field>
+			<field name="arch" type="xml">
+				<form string="Organization">
+					<field name="name" select="1"/>
+				</form>
+			</field>
+		</record>
+		
+		<record model="ir.ui.view" id="lc5_res_partner_references_form_view">
+            <field name="name">lc5.partner.references.form.view</field>
+            <field name="model">lc5.partner.references</field>
+            <field name="type">form</field>
+            <field name="priority">2</field>
+            <field name="arch" type="xml">
+				<form string="Reference">
+                            <field name="company" />
+                            <field name="name" />
+                            <field name="address"/>
+                            <field name="tel_no"/>
+                            <field name="fax_no"/>
+							<separator string="Note" colspan="4"/>
+                            <field name="note" nolabel="1"/>
+                        </form>
+            </field>
+        </record>
+	
+		 <record model="ir.ui.view" id="inherit_view_res_partner_form">
+                <field name="name">inherit.view.res.partner.form</field>
+                <field name="model">res.partner</field>
+                <field name="type">form</field>
+                <field name="inherit_id" ref="base.view_partner_form"/>
+                <field name="arch" type="xml">
+                
+					<field name="category_id" position="after">
+						<field name="nature_of_business_id" placeholder="Nature of Business"/>
+						<field name="organization_id" placeholder="Organization"/>
+					</field> 
+					
+					<field name="email" position="replace">
+						<field name="nationality"/>
+					</field>   
+
+					<page string="History" position="before" version="7.0">
+					<page string="References" col="4" name="references">
+						<field name="reference_ids" context="{'default_partner_id': active_id},'form_view_ref': 'view_res_partner_references_form'">
+							<tree string="References">
+								<field name="company" />
+								<field name="name" />
+								<field name="address"/>
+								<field name="tel_no"/>
+								<field name="fax_no"/>
+							</tree>
+						</field>
+					</page>
+					</page>  
+
+
+                </field>
+            </record>    
+    
+    </data>
+</openerp>

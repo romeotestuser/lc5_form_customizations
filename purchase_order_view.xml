@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+
+			<record model="ir.ui.view" id="lc5_purchase_order_mod_form_view">
+				<field name="name">lc5.purchase.order.mod.form</field>
+				<field name="model">lc5.purchase.order.mod</field>
+				<field name="type">form</field>
+				<field name="arch" type="xml">
+					<form string="Warranty">
+						<field name="name" select="1"/>
+					</form>
+				</field>
+			</record>
+	
+		 <record model="ir.ui.view" id="inherit_view_purchase_order_form">
+                <field name="name">inherit.view.purchase.order.form</field>
+                <field name="model">purchase.order</field>
+                <field name="type">form</field>
+                <field name="inherit_id" ref="purchase.purchase_order_form"/>
+                <field name="arch" type="xml">
+                
+					<field name="warehouse_id" position="after">
+						<field name="purchase_quotation_reference"/>
+					</field> 
+				
+					<field name="notes" position="before">
+						<separator string="Terms and Conditions / Notes" colspan="4"/>
+					</field>  
+
+					<field name="notes" position="after">
+						<group><group><field name="mode_of_delivery_id" string="Mode of Delivery" class="oe_inline"/></group></group><group></group>
+					</field>     				
+
+	                <page string="Incoming Shipments &amp; Invoices" position="after">
+						<page string="Signatories">
+							<group >
+								<group>								
+								<field name="prepared_by_id" class="oe_inline"/>
+								<field name="approved_by_id" class="oe_inline"/>
+								</group>
+							</group>
+							<group></group>	
+						</page>
+					</page>  
+
+
+                </field>
+            </record>    
+    
+    </data>
+</openerp>

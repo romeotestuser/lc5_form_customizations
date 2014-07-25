@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+    
+            <record model="ir.ui.view" id="lc5_delivery_order_vehicle_form_view">
+                <field name="name">lc5.delivery.order.vehicle.form</field>
+                <field name="model">lc5.delivery.order.vehicle</field>
+                <field name="type">form</field>
+                <field name="arch" type="xml">
+                    <form string="Delivery Vehicle">
+                        <field name="name" select="1"/>
+                    </form>
+                </field>
+            </record>
+            
+           <record model="ir.ui.view" id="lc5_delivery_order_driver_form_view">
+                <field name="name">lc5.delivery.order.driver.form</field>
+                <field name="model">lc5.delivery.order.driver</field>
+                <field name="type">form</field>
+                <field name="arch" type="xml">
+                    <form string="Delivery Driver">
+                        <field name="name" select="1"/>
+                    </form>
+                </field>
+            </record>            
+    
+
+		 <record model="ir.ui.view" id="inherit_view_picking_out_form">
+                <field name="name">inherit.view.picking.out.form</field>
+                <field name="model">stock.picking.out</field>
+                <field name="type">form</field>
+                <field name="inherit_id" ref="stock.view_picking_out_form"/>
+                <field name="arch" type="xml">
+
+					<field name="stock_journal_id" position="after">
+						<field name="project"/>
+					</field> 
+					
+					<field name="origin" position="after">
+						<!--field name="sales_invoice_reference"/-->
+						<!--field name="sales_order_reference"/-->
+						<field name="purchase_order_reference"/>
+					</field> 
+					
+					<field name="auto_picking" position="after">
+						<field name="delivery_vehicle_id"/>
+						<field name="driver_id"/>
+						<field name="people_in_charge"/>
+					</field>  
+					
+					<field name="note" position="before">
+						<separator string="Terms and Conditions / Notes" colspan="4"/>
+					</field>     
+					
+					<field name="note" position="after">
+						<separator string="Delivery Remarks" colspan="4"/>
+							<field name="delivery_remarks" class="oe_inline" placeholder="Add a remark.."/>
+					</field>      
+
+	                <page string="Additional Info" position="after">
+						<page string="Signatories">
+							<group >
+								<group>
+								<field name="prepared_by_id"/>
+								<field name="verified_by_id"/>
+								<field name="approved_by_id" />
+								</group>
+							</group>
+							<group></group>
+						</page>					
+					</page>  
+				
+                </field>
+            </record>          
+    
+    
+    </data>
+</openerp>

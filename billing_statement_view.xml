@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+	
+		 <record model="ir.ui.view" id="inherit_view_account_billing_form">
+                <field name="name">inherit.view.account.billing.form</field>
+                <field name="model">account.billing</field>
+                <field name="type">form</field>
+                <field name="inherit_id" ref="account_billing.view_billing_receipt_form"/>
+                <field name="arch" type="xml">
+				
+					<field name="narration" position="before">
+						<separator string="Terms and Conditions / Notes" colspan="4"/>
+					</field>     				
+
+	                <page string="Payment Information" position="after">
+						<page string="Signatories">
+							<group >
+								<group>								
+								<field name="prepared_by_id" class="oe_inline"/>
+								<field name="approved_by_id" class="oe_inline"/>
+								</group>
+							</group>
+							<group></group>		
+						</page>
+					</page>  
+
+
+                </field>
+            </record>    
+    
+    </data>
+</openerp>

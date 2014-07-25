@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+    
+    
+		 <record model="ir.ui.view" id="inherit_view_picking_form">
+                <field name="name">inherit.view.picking.form</field>
+                <field name="model">stock.picking</field>
+                <field name="type">form</field>
+                <field name="inherit_id" ref="stock.view_picking_form"/>
+                <field name="arch" type="xml">
+                
+					<field name="origin" position="after">
+						<field name="transfer_request_reference"/>
+					</field> 
+					
+					<field name="note" position="before">
+						<separator string="Terms and Conditions / Notes" colspan="4"/>
+					</field>     
+					
+					<field name="note" position="after">
+						<separator string="Delivery Remarks" colspan="4"/>
+							<field name="delivery_remarks" class="oe_inline" placeholder="Add a remark.."/>
+					</field>   
+
+					<field name="auto_picking" position="after">
+						<field name="delivery_vehicle_id"/>
+						<field name="driver_id"/>
+						<field name="people_in_charge"/>
+					</field> 				
+
+	                <page string="Additional Info" position="after">
+						<page string="Signatories">
+							<group >
+								<group>
+								<field name="prepared_by_id"/>
+								<field name="verified_by_id"/>
+								<field name="approved_by_id" />
+								</group>
+							</group>
+							<group></group>
+						</page>					
+					</page>  
+
+
+                </field>
+            </record>    
+    
+    </data>
+</openerp>

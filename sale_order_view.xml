@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+    
+			<record model="ir.ui.view" id="lc5_sale_order_warranty_form_view">
+				<field name="name">lc5.sale.order.warranty.form</field>
+				<field name="model">lc5.sale.order.warranty</field>
+				<field name="type">form</field>
+				<field name="arch" type="xml">
+					<form string="Warranty">
+						<field name="name" select="1"/>
+					</form>
+				</field>
+			</record>
+			
+			<record model="ir.ui.view" id="lc5_sale_order_delivery_lead_time_form_view">
+				<field name="name">lc5.sale.order.dlt.form</field>
+				<field name="model">lc5.sale.order.dlt</field>
+				<field name="type">form</field>
+				<field name="arch" type="xml">
+					<form string="Delivery Lead Time">
+						<field name="name" select="1"/>
+					</form>
+				</field>
+			</record>
+			
+			<record model="ir.ui.view" id="lc5_sale_order_payment_method_form_view">
+				<field name="name">lc5.sale.order.pm.form</field>
+				<field name="model">lc5.sale.order.pm</field>
+				<field name="type">form</field>
+				<field name="arch" type="xml">
+					<form string="Payment Method">
+						<field name="name" select="1"/>
+					</form>
+				</field>
+			</record>
+			
+			<record model="ir.ui.view" id="lc5_sale_order_terms_of_payment_form_view">
+				<field name="name">lc5.sale.order.top.form</field>
+				<field name="model">lc5.sale.order.top</field>
+				<field name="type">form</field>
+				<field name="arch" type="xml">
+					<form string="Terms of Payment">
+						<field name="name" select="1"/>
+					</form>
+				</field>
+			</record>
+			
+			<record model="ir.ui.view" id="lc5_sale_order_signature_form_view">
+				<field name="name">lc5.sale.order.signature.form</field>
+				<field name="model">lc5.sale.order.signature</field>
+				<field name="type">form</field>
+				<field name="arch" type="xml">
+					<form string="Signature">
+						<field name="name" select="1"/>
+					</form>
+				</field>
+			</record>
+    
+		 <record model="ir.ui.view" id="inherit_view_sale_order_form">
+                <field name="name">inherit.view.sale.order.form</field>
+                <field name="model">sale.order</field>
+                <field name="type">form</field>
+                <field name="inherit_id" ref="sale.view_order_form"/>
+                <field name="arch" type="xml">
+                
+					<field name="partner_shipping_id" position="after">
+						<field name="project"/>
+					</field> 
+					
+					<!--field name="client_order_ref" position="replace">
+						<field name="client_order_ref" string="P.O. Reference"/>
+					</field-->
+				
+					<field name="note" position="before">
+						<separator string="Terms and Conditions / Notes" colspan="4"/>
+					</field>      
+
+					<field name="note" position="after">
+						<group><group><field name="warranty_id" string="Warranty" class="oe_inline"/>
+						<field name="delivery_lead_time_id" string="Delivery Lead Time" class="oe_inline"/>
+						<field name="payment_method_id" string="Payment Method" class="oe_inline"/>
+						<field name="terms_of_payment_id" string="Terms of Payment" class="oe_inline"/></group></group><group></group>
+					</field> 				
+
+	                <page string="Other Information" position="after">
+						<page string="Message">
+						
+							<separator string="Introduction" colspan="4"/>
+							<field name="intro" class="oe_inline" placeholder="Type your introduction.."/>
+ 
+							<separator string="Closing Message" colspan="4"/>
+							<field name="closing" class="oe_inline" placeholder="Type your closing message.."/>
+ 		
+							<group >
+								<group>								
+								<field name="signature" class="oe_inline"/>
+								<field name="prepared_by_id" class="oe_inline"/>
+								<field name="verified_by_id" class="oe_inline"/>
+								<field name="approved_by_id" class="oe_inline"/>
+								</group>
+							</group>
+							<group></group>
+						</page>					
+					</page>  
+
+
+                </field>
+            </record>    
+    
+    </data>
+</openerp>
