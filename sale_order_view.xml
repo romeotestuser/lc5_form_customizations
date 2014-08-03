@@ -2,6 +2,18 @@
 <openerp>
     <data>
     
+		<record model="ir.ui.view" id="glimsol_view_move_picking_tree_inherit">
+                <field name="name">glimsol.view.move.picking.tree.inherit</field>
+                <field name="model">stock.move</field>
+                <field name="type">tree</field>
+                <field name="inherit_id" ref="stock.view_move_picking_tree"/>
+                <field name="arch" type="xml">
+                    <field name="product_id" position="before">
+                    	<field name="line_number"/>
+                    </field>
+                </field>
+            </record>    
+    
 			<record model="ir.ui.view" id="lc5_sale_order_warranty_form_view">
 				<field name="name">lc5.sale.order.warranty.form</field>
 				<field name="model">lc5.sale.order.warranty</field>

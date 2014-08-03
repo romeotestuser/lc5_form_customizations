@@ -64,6 +64,14 @@ class lc5_sale_order_sig(osv.osv):
 }
 lc5_sale_order_sig()
 
+class lc5_stock_move(osv.osv):
+    _inherit="stock.move"
+    _name="stock.move"
+    
+    _columns={
+              'line_number':fields.char('line_number',size=64),
+              }
+
 class lc5_sale_order(osv.osv):
     _inherit = 'sale.order'
     _name="sale.order"
@@ -82,21 +90,213 @@ class lc5_sale_order(osv.osv):
         'approved_by_id':fields.many2one('res.users', 'Approved By', required=False), 
     }
     
-    def _prepare_order_picking(self, cr, uid, order, context=None):
-        pick_name = self.pool.get('ir.sequence').get(cr, uid, 'stock.picking.out')
-        return {
-            'name': pick_name,
-            'origin': order.name,
-            'date': order.date_order,
-            'type': 'out',
-            'state': 'auto',
-            'move_type': order.picking_policy,
-            'sale_id': order.id,
-            'partner_id': order.partner_shipping_id.id,
-            'note': order.note,
-            'invoice_state': (order.order_policy=='picking' and '2binvoiced') or 'none',
-            'company_id': order.company_id.id,
-        }
+    def process_product(self,cr,uid,line,product_id,product_qty,result=None,context=None):
+        
+        fake_line_ids = []
+        is_bundle = False        
+        location_id = context['location_id']
+        order = context['order']
+        output_id= context['output_id']
+        date_planned=context['date_planned']
+        picking_id=context['picking_id']
+        picking_obj=context['picking_obj']
+        move_obj=context['move_obj']
+        procurement_obj=context['procurement_obj']
+        proc_ids=context['proc_ids']
+        line_number = context['line_number']
+        print "line_number".upper(),line_number
+        
+        if product_id.supply_method == 'bundle':
+            fake_line_ids = filter(None, map(lambda x:x, product_id.item_ids))
+            is_bundle = True
+        else:
+            fake_line_ids.append(line)
+            
+#########product bundle only handling (no components)
+        if is_bundle:
+            for fake_line in [line]:
+                line_vals = {}
+                
+                line_vals.update({
+                    'location_id': location_id,
+                    'company_id': order.company_id.id,                        
+                    #move
+                    'location_dest_id': output_id,
+                    'date': date_planned,
+                    'date_expected': date_planned,
+                    'partner_id': line.address_allotment_id.id or order.partner_shipping_id.id,
+                    'sale_line_id': line.id,
+                    'origin': order.name,
+                    'tracking_id': False,
+                    'state': 'draft',
+                })
+    
+
+                line_vals.update({
+                    'name': line.name,
+                    'note': line.name,
+                    'product_id': line.product_id.id,
+                    'product_qty': line.product_uom_qty,
+                    'product_uom': line.product_uom.id,
+                    'product_uos_qty': (line.product_uos and line.product_uos_qty) or line.product_uom_qty,
+                    'product_uos': (line.product_uos and line.product_uos.id) or line.product_uom.id,
+                    'procure_method': line.type,
+                    'product_packaging': line.product_packaging,
+                    'price_unit': line.product_id.standard_price or 0.0,
+                })
+                product_id = product_id
+                
+                if sorted(set(['name', 'note', 'product_id', 'product_qty', 'product_uom', 'product_uos_qty', 'product_uos', 'procure_method', 'product_packaging', 'price_unit'])) == sorted(set(['name', 'note', 'product_id', 'product_qty', 'product_uom', 'product_uos_qty', 'product_uos', 'procure_method', 'product_packaging', 'price_unit']).intersection(set(line_vals.keys()))):
+                    line_vals['name']=context['name']
+                    line_vals['product_id']=context['product_id']
+                    line_vals['product_qty']=context['product_qty']
+                    line_vals['product_uos_qty']=context['product_qty']
+                    line_vals['product_uom']=context['product_uom']
+                    line_vals['product_uos']=context['product_uos']
+                    line_vals['procure_method']=context['procure_method']
+                    line_vals['price_unit']=context['price_unit']
+                    line_vals['note']=context['note']
+                        
+                
+                if product_id.type in ('product', 'consu'):
+                    if not picking_id:
+                        picking_id = picking_obj.create(cr, uid, self._prepare_order_picking(cr, uid, order, context=context))
+                        context['picking_id']=picking_id
+                    line_vals.update({'picking_id': picking_id,
+                                      'line_number':line_number}
+                                     )
+                    move_id = move_obj.create(cr, uid, line_vals)
+                else:
+                    # a service has no stock move
+                    move_id = False
+                
+                del line_vals['location_dest_id']
+                del line_vals['date']
+                del line_vals['date_expected']
+                del line_vals['picking_id']
+                del line_vals['partner_id']
+                del line_vals['sale_line_id']
+                del line_vals['tracking_id']
+                del line_vals['state']
+                
+                line_vals.update({
+                    'move_id': move_id,
+                    'date_planned': date_planned,
+                })
+                
+                proc_id = procurement_obj.create(cr, uid, line_vals)
+                proc_ids.append(proc_id)
+                line.write({'procurement_id': proc_id})
+                self.ship_recreate(cr, uid, order, line, move_id, proc_id)        
+            
+##########product bundle components only handling
+        for line2_number,fake_line in enumerate(fake_line_ids):
+            line2_number+=1
+            line_vals = {}
+            
+            line_vals.update({
+                'location_id': location_id,
+                'company_id': order.company_id.id,                        
+                #move
+                'location_dest_id': output_id,
+                'date': date_planned,
+                'date_expected': date_planned,
+                'partner_id': line.address_allotment_id.id or order.partner_shipping_id.id,
+                'sale_line_id': line.id,
+                'origin': order.name,
+                'tracking_id': False,
+                'state': 'draft',
+            })
+
+            if is_bundle:
+                context.update({
+                    'product_id': fake_line.item_id.id,
+                    'product_qty': fake_line.qty_uom * product_qty,
+                    'product_uom': fake_line.uom_id.id,
+                    'product_uos_qty': fake_line.qty_uom * product_qty,
+                    'product_uos': fake_line.uom_id.id,
+                    'procure_method': fake_line.item_id.procure_method,
+                    'price_unit': fake_line.item_id.standard_price or 0.0,
+                    'name': fake_line.item_id.name,
+                    'note': fake_line.item_id.name + ' (' + line.name + ')',
+                    'line_number':'.'.join([str(line_number),str(line2_number)])
+                })
+                picking_id,proc_ids=self.process_product(cr, uid, line, fake_line.item_id, fake_line.qty_uom * product_qty, context=context)
+                continue
+#                 line_vals.update({
+#                     'product_id': fake_line.item_id.id,
+#                     'product_qty': fake_line.qty_uom * line.product_uom_qty,
+#                     'product_uom': fake_line.uom_id.id,
+#                     'product_uos_qty': fake_line.qty_uom * line.product_uos_qty,
+#                     'product_uos': fake_line.uom_id.id,
+#                     'procure_method': fake_line.item_id.procure_method,
+#                     'price_unit': fake_line.item_id.standard_price or 0.0,
+#                     'name': fake_line.item_id.name,
+#                     'note': fake_line.item_id.name + ' (' + line.name + ')',
+#                 })
+#                 product_id = fake_line.item_id
+            else:
+                line_vals.update({
+                    'name': line.name,
+                    'note': line.name,
+                    'product_id': line.product_id.id,
+                    'product_qty': line.product_uom_qty,
+                    'product_uom': line.product_uom.id,
+                    'product_uos_qty': (line.product_uos and line.product_uos_qty) or line.product_uom_qty,
+                    'product_uos': (line.product_uos and line.product_uos.id) or line.product_uom.id,
+                    'procure_method': line.type,
+                    'product_packaging': line.product_packaging,
+                    'price_unit': line.product_id.standard_price or 0.0,
+                })
+                product_id = product_id
+                
+                if sorted(set(['name', 'note', 'product_id', 'product_qty', 'product_uom', 'product_uos_qty', 'product_uos', 'procure_method', 'product_packaging', 'price_unit'])) == sorted(set(['name', 'note', 'product_id', 'product_qty', 'product_uom', 'product_uos_qty', 'product_uos', 'procure_method', 'product_packaging', 'price_unit']).intersection(set(line_vals.keys()))):
+                    line_vals['name']=context['name']
+                    line_vals['product_id']=context['product_id']
+                    line_vals['product_qty']=context['product_qty']
+                    line_vals['product_uos_qty']=context['product_qty']
+                    line_vals['product_uom']=context['product_uom']
+                    line_vals['product_uos']=context['product_uos']
+                    line_vals['procure_method']=context['procure_method']
+                    line_vals['price_unit']=context['price_unit']
+                    line_vals['note']=context['note']
+
+                    
+            
+            if product_id.type in ('product', 'consu'):
+                if not picking_id:
+                    picking_id = picking_obj.create(cr, uid, self._prepare_order_picking(cr, uid, order, context=context))
+                    context['picking_id']=picking_id
+                line_vals.update({'picking_id': picking_id,
+                                  'line_number':'.'.join([str(line_number),str(line2_number)])
+                                  })
+
+                if len(fake_line_ids)==1:
+                    line_vals['line_number']=line_number
+                move_id = move_obj.create(cr, uid, line_vals)
+            else:
+                # a service has no stock move
+                move_id = False
+            
+            del line_vals['location_dest_id']
+            del line_vals['date']
+            del line_vals['date_expected']
+            del line_vals['picking_id']
+            del line_vals['partner_id']
+            del line_vals['sale_line_id']
+            del line_vals['tracking_id']
+            del line_vals['state']
+            
+            line_vals.update({
+                'move_id': move_id,
+                'date_planned': date_planned,
+            })
+            
+            proc_id = procurement_obj.create(cr, uid, line_vals)
+            proc_ids.append(proc_id)
+            line.write({'procurement_id': proc_id})
+            self.ship_recreate(cr, uid, order, line, move_id, proc_id)
+        return picking_id,proc_ids
     
     def _create_pickings_and_procurements(self, cr, uid, order, order_lines, picking_id=False, context=None):
         """Create the required procurements to supply sales order lines, also connecting
@@ -125,95 +325,36 @@ class lc5_sale_order(osv.osv):
         location_id = order.shop_id.warehouse_id.lot_stock_id.id
         output_id = order.shop_id.warehouse_id.lot_output_id.id
 
-        for line in order_lines:
+        for line_number,line in enumerate(order_lines):
+            line_number+=1
             if line.state == 'done':
                 continue
 
             date_planned = self._get_date_planned(cr, uid, order, line, order.date_order, context=context)
             
-            fake_line_ids = []
-            is_bundle = False
+#             fake_line_ids = []
+#             is_bundle = False
             
             if line.product_id:
-                if line.product_id.supply_method == 'bundle':
-                    fake_line_ids = filter(None, map(lambda x:x, line.product_id.item_ids))
-                    is_bundle = True
+                temp_context={
+                    'line_number':line_number,
+                    'name': line.name,
+                    'note': line.name,
+                    'product_id': line.product_id.id,
+                    'product_qty': line.product_uom_qty,
+                    'product_uom': line.product_uom.id,
+                    'product_uos_qty': (line.product_uos and line.product_uos_qty) or line.product_uom_qty,
+                    'product_uos': (line.product_uos and line.product_uos.id) or line.product_uom.id,
+                    'procure_method': line.type,
+                    'product_packaging': line.product_packaging,
+                    'price_unit': line.product_id.standard_price or 0.0,
+                    'proc_ids':proc_ids,'procurement_obj':procurement_obj,'location_id':location_id,'order':order,'output_id':output_id,'date_planned':date_planned,'picking_id':picking_id,'picking_obj':picking_obj,'move_obj':move_obj,                    
+                }
+                if not context:
+                    context = temp_context
                 else:
-                    fake_line_ids.append(line)
-                
-                for fake_line in fake_line_ids:
-                    line_vals = {}
-                    
-                    line_vals.update({
-                        'location_id': location_id,
-                        'company_id': order.company_id.id,                        
-                        #move
-                        'location_dest_id': output_id,
-                        'date': date_planned,
-                        'date_expected': date_planned,
-                        'partner_id': line.address_allotment_id.id or order.partner_shipping_id.id,
-                        'sale_line_id': line.id,
-                        'origin': order.name,
-                        'tracking_id': False,
-                        'state': 'draft',
-                    })
-
-                    if is_bundle:
-                        line_vals.update({
-                            'product_id': fake_line.item_id.id,
-                            'product_qty': fake_line.qty_uom * line.product_uom_qty,
-                            'product_uom': fake_line.uom_id.id,
-                            'product_uos_qty': fake_line.qty_uom * line.product_uos_qty,
-                            'product_uos': fake_line.uom_id.id,
-                            'procure_method': fake_line.item_id.procure_method,
-                            'price_unit': fake_line.item_id.standard_price or 0.0,
-                            'name': fake_line.item_id.name,
-                            'note': fake_line.item_id.name + ' (' + line.name + ')',
-                        })
-                        product_id = fake_line.item_id
-                    else:
-                        line_vals.update({
-                            'name': line.name,
-                            'note': line.name,
-                            'product_id': line.product_id.id,
-                            'product_qty': line.product_uom_qty,
-                            'product_uom': line.product_uom.id,
-                            'product_uos_qty': (line.product_uos and line.product_uos_qty) or line.product_uom_qty,
-                            'product_uos': (line.product_uos and line.product_uos.id) or line.product_uom.id,
-                            'procure_method': line.type,
-                            'product_packaging': line.product_packaging,
-                            'price_unit': line.product_id.standard_price or 0.0,
-                        })
-                        product_id = line.product_id
-                    
-                    if product_id.type in ('product', 'consu'):
-                        if not picking_id:
-                            picking_id = picking_obj.create(cr, uid, self._prepare_order_picking(cr, uid, order, context=context))
-                        line_vals.update({'picking_id': picking_id,})
-
-                        move_id = move_obj.create(cr, uid, line_vals)
-                    else:
-                        # a service has no stock move
-                        move_id = False
-                    
-                    del line_vals['location_dest_id']
-                    del line_vals['date']
-                    del line_vals['date_expected']
-                    del line_vals['picking_id']
-                    del line_vals['partner_id']
-                    del line_vals['sale_line_id']
-                    del line_vals['tracking_id']
-                    del line_vals['state']
-                    
-                    line_vals.update({
-                        'move_id': move_id,
-                        'date_planned': date_planned,
-                    })
-                    
-                    proc_id = procurement_obj.create(cr, uid, line_vals)
-                    proc_ids.append(proc_id)
-                    line.write({'procurement_id': proc_id})
-                    self.ship_recreate(cr, uid, order, line, move_id, proc_id)
+                    context.update(temp_context)
+                picking_id,proc_ids=self.process_product(cr,uid,line,line.product_id,line.product_uom_qty,context=context)
 
         wf_service = netsvc.LocalService("workflow")
         if picking_id:
@@ -232,5 +373,5 @@ class lc5_sale_order(osv.osv):
                         val['state'] = 'manual'
                         break
         order.write(val)
-        return True    
+        return True
 lc5_sale_order()
