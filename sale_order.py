@@ -69,7 +69,7 @@ class lc5_stock_move(osv.osv):
     _name="stock.move"
     
     _columns={
-              'line_number':fields.char('line_number',size=64),
+              'line_number':fields.char('Line number',size=64),
               }
 
 class lc5_sale_order(osv.osv):
