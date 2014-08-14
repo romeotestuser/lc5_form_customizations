@@ -76,7 +76,7 @@ class lc5_stock_move(osv.osv):
 
               }
     def create(self, cr, uid, data, context=None):
-        result = super(stock_move, self).create(cr, uid, data, context=context)
+        result = super(lc5_stock_move, self).create(cr, uid, data, context=context)
         #check for product supply method if bundled
         move_obj = self.browse(cr,uid,result)
         product_supply_method = move_obj.product_id.supply_method
