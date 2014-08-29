@@ -83,6 +83,8 @@ class lc5_stock_move(osv.osv):
         if product_supply_method == 'bundle':
             #loop for product components
             for item in move_obj.product_id.item_ids:
+                if context and 'mode' in context and context['mode']=='main bundle included':
+                    continue
                 temp_val = data.copy()
                 temp_val['product_id']=item.item_id.id
                 temp_val['product_qty']=data['product_qty']*item.qty_uom
@@ -152,6 +154,9 @@ class lc5_sale_order(osv.osv):
     
     
     def _create_pickings_and_procurements(self, cr, uid, order, order_lines, picking_id=False, context=None):
+        print "here".upper()
+        import pdb
+        pdb.set_trace()
         """Create the required procurements to supply sales order lines, also connecting
         the procurements to appropriate stock moves in order to bring the goods to the
         sales order's requested location.
