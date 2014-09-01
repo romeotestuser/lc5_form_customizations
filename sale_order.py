@@ -66,7 +66,6 @@ lc5_sale_order_sig()
 
 class lc5_stock_move(osv.osv):
     _inherit="stock.move"
-    _name="stock.move"
     
     
     _columns={
@@ -75,6 +74,7 @@ class lc5_stock_move(osv.osv):
 #             'line_number':fields.char('Line number',size=64),
 
               }
+    
     def create(self, cr, uid, data, context=None):
         result = super(lc5_stock_move, self).create(cr, uid, data, context=context)
         #check for product supply method if bundled
@@ -155,8 +155,6 @@ class lc5_sale_order(osv.osv):
     
     def _create_pickings_and_procurements(self, cr, uid, order, order_lines, picking_id=False, context=None):
         print "here".upper()
-        import pdb
-        pdb.set_trace()
         """Create the required procurements to supply sales order lines, also connecting
         the procurements to appropriate stock moves in order to bring the goods to the
         sales order's requested location.
